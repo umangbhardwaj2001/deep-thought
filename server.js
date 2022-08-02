@@ -1,9 +1,9 @@
 const port = process.env.PORT || 3000
 const express = require('express')
-const mongoose = require('mongoose')
+const { Collection, ObjectId } = require('mongodb')
+const dbConnect = require('./db')
 
 const app = express()
-
 app.use(express.json())
 
 
@@ -21,15 +21,6 @@ appRouter
     .put(putEvent)
     .delete(deleteEvent)
 
-    const db_link = 'mongodb+srv://admin:7Tkg5ctIAGMixt4j@cluster0.iqcrx.mongodb.net/?retryWrites=true&w=majority';
-    mongoose.connect(db_link)
-    .then(db=>{
-        console.log('conected',db);
-    })
-    .catch(err=>{
-        console.log('error',err);
-    })
-
 app.listen(port,(err)=>{
     if(err) console.log('ERROR', err);
     console.log('server running at port no. ',port);
@@ -37,35 +28,43 @@ app.listen(port,(err)=>{
 
 
 // postEvent
-function postEvent(req,res)
+async function postEvent(req,res)
 {
-    res.send({message : 'posted'})
+    let collection = await dbConnect();
+    let result = await collection.insertOne(req.body);
+    res.send(result);
 }
 
 // deleteEvent
-function deleteEvent(req,res)
+async function deleteEvent(req,res)
 {
-    res.send({message : 'deleted',
-    id : req.params.id})
+    let collection = await dbConnect();
+    let result = await collection.deleteOne(req.body)
+    res.send(result);
 }
 
 // putEvent
-function putEvent(req,res)
+async function putEvent(req,res)
 {
-    res.send({message : 'putted',
-    id : req.params.id})
+    let collection = await dbConnect();
+    let result = await collection.updateOne({_id:ObjectId(req.params.id)},{
+        $set:req.body
+    })
+    res.send(result);
 }
 
 // getEvent
-function getEvent(req,res)
+async function getEvent(req,res)
 {
-    res.send({message : 'get',
-    query : req.query})
+    let collection = await dbConnect();
+    let result = await collection.find().toArray();
+    res.send(result);
 }
 
 // getEventbyUid
-function getEventbyUid(req,res)
+async function getEventbyUid(req,res)
 {
-    res.send({message : 'get',
-    id : req.params.id})
+    let collection = await dbConnect();
+    let result = await collection.findOne({_id:ObjectId(req.params.id)})
+    res.json({data : result})
 }
